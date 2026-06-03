@@ -1,0 +1,34 @@
+# fly.io deploy config for the HRMS API.
+#
+# Primary region: fra (Frankfurt) — most pilot tenants are in EU.
+# Replica region: ams (Amsterdam) for HA failover within EU.
+
+app = "fiber-hrms"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  MONGO_DB = "fiber-hrms"
+  PAYROLL_BACKUP_BUCKET = "fiber-hrms-payroll-backups-eu"
+  PAYROLL_BACKUP_REGION = "eu-central-1"
+
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+# Multi-region replication for HA. All replicas stay within the EU
+# region cluster — payroll data does NOT replicate to US edge nodes.
+[[regions]]
+  primary = "fra"
+  replicas = ["ams"]
